@@ -17,6 +17,8 @@ const CONSERVATION_LABELS = {
 export default function EquipmentPage() {
   const [search, setSearch] = useState('');
   const [selectedUnitId, setSelectedUnitId] = useState('all');
+  const [conservationFilter, setConservationFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -79,15 +81,27 @@ export default function EquipmentPage() {
   const filteredEquipment = useMemo(() => {
     if (!equipment) return [];
 
-    const term = debouncedSearch.trim().toLowerCase();
-    if (!term) return equipment;
-
     return equipment.filter((row) => {
+      const term = debouncedSearch.trim().toLowerCase();
       const categoryName = categories.find((c) => c.id === row.category_id)?.name ?? '';
-      const haystacks = [row.item, row.model_brand, categoryName];
-      return haystacks.some((value) => value && value.toLowerCase().includes(term));
+
+      if (term) {
+        const haystacks = [row.item, row.model_brand, categoryName];
+        const matches = haystacks.some((value) => value && value.toLowerCase().includes(term));
+        if (!matches) return false;
+      }
+
+      if (conservationFilter !== 'all' && row.conservation_state !== conservationFilter) {
+        return false;
+      }
+
+      if (categoryFilter !== 'all' && row.category_id !== categoryFilter) {
+        return false;
+      }
+
+      return true;
     });
-  }, [equipment, debouncedSearch, categories]);
+  }, [equipment, debouncedSearch, categories, conservationFilter, categoryFilter]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -206,11 +220,20 @@ export default function EquipmentPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-end">
-        <div className="flex flex-1 flex-col gap-1">
+      <div className="grid grid-cols-1 gap-2 rounded-lg border bg-background p-3 text-sm md:grid-cols-8 md:items-end">
+        <div className="space-y-1 md:col-span-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Busca</span>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por item"
+            className="h-9"
+          />
+        </div>
+        <div className="space-y-1 md:col-span-2">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Unidade</span>
           <select
-            className="h-9 min-w-[220px] rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={selectedUnitId}
             onChange={(e) => {
               setSelectedUnitId(e.target.value);
@@ -226,14 +249,41 @@ export default function EquipmentPage() {
             ))}
           </select>
         </div>
-        <div className="flex w-full flex-col gap-1 md:w-64">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Busca</span>
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por descrição do item"
-            className="h-9"
-          />
+        <div className="space-y-1 md:col-span-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado</span>
+          <select
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={conservationFilter}
+            onChange={(e) => {
+              setConservationFilter(e.target.value);
+              setSelectedId(null);
+            }}
+          >
+            <option value="all">Todos</option>
+            {Object.entries(CONSERVATION_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1 md:col-span-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Categoria</span>
+          <select
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setSelectedId(null);
+            }}
+          >
+            <option value="all">Todas</option>
+            {categories?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

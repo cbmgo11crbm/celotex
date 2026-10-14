@@ -376,7 +376,7 @@ export default function MilitaryListPage() {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
       <div className="flex-1 space-y-4 md:flex md:flex-col md:h-[90vh]">
-        <div className="grid grid-cols-2 gap-2 rounded-lg border bg-background p-2 text-sm md:grid-cols-12 md:items-end">
+        <div className="grid grid-cols-2 gap-1 rounded-lg border bg-background p-2 text-sm md:grid-cols-11 md:items-end">
           <div className="col-span-2 space-y-1 md:col-span-2">
             <label htmlFor="search" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Busca
