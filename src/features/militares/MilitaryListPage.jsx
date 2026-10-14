@@ -377,7 +377,7 @@ export default function MilitaryListPage() {
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
       <div className="flex-1 space-y-4 md:flex md:flex-col md:h-[90vh]">
         <div className="grid grid-cols-2 gap-2 rounded-lg border bg-background p-2 text-sm md:grid-cols-12 md:items-end">
-          <div className="col-span-2 space-y-1 md:col-span-3">
+          <div className="col-span-2 space-y-1 md:col-span-2">
             <label htmlFor="search" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Busca
             </label>
@@ -389,7 +389,7 @@ export default function MilitaryListPage() {
               className="h-8 text-xs"
             />
           </div>
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1 md:col-span-1">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Unidade</span>
             <select
               className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -405,7 +405,7 @@ export default function MilitaryListPage() {
               ))}
             </select>
           </div>
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1 md:col-span-1">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Situação</span>
             <select
               className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -420,7 +420,7 @@ export default function MilitaryListPage() {
               <option value="afastados">Afastados</option>
             </select>
           </div>
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1 md:col-span-1">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Atividade</span>
             <select
               className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -435,7 +435,7 @@ export default function MilitaryListPage() {
               <option value="administrativo">Adm.</option>
             </select>
           </div>
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1 md:col-span-1">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">TAF</span>
             <select
               className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -454,7 +454,7 @@ export default function MilitaryListPage() {
               <option value="NF">NF</option>
             </select>
           </div>
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1 md:col-span-1">
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Posto</span>
             <select
               className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -495,7 +495,7 @@ export default function MilitaryListPage() {
             </div>
           </div>
           <div className="space-y-1 md:col-span-2">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Serviço</span>
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Tempo de Serviço</span>
             <div className="flex items-center gap-1">
               <Input
                 type="number"
@@ -516,7 +516,7 @@ export default function MilitaryListPage() {
               />
             </div>
           </div>
-          <div className="col-span-2 flex justify-end md:col-span-2">
+          <div className="col-span-2 flex justify-end md:col-span-1">
             <Button
               variant="primary"
               size="sm"
