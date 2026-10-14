@@ -1,0 +1,1 @@
+select public.bootstrap_first_master('15627825-f644-4a02-840d-6f0df4f88df1');

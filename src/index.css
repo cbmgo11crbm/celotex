@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 220 23% 97%;
+  --foreground: 222 47% 11%;
+  --muted: 220 23% 94%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 222 84% 56%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --primary: 222 84% 56%;
+  --primary-foreground: 210 40% 98%;
+  --border: 215 22% 87%;
+  --input: 215 22% 87%;
+  --ring: 222 84% 56%;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 220 5% 12%;
+  --foreground: 220 5% 96%;
+  --muted: 220 5% 20%;
+  --muted-foreground: 220 3% 68%;
+  --accent: 222 84% 56%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 70% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --primary: 222 84% 56%;
+  --primary-foreground: 0 0% 100%;
+  --border: 220 4% 28%;
+  --input: 220 4% 28%;
+  --ring: 222 84% 56%;
+}
+
+body {
+  @apply bg-background text-foreground antialiased font-sans;
+}
