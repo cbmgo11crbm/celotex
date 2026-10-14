@@ -106,6 +106,7 @@ export default function VehiclesPage() {
   const [model, setModel] = useState('');
   const [manufactureYear, setManufactureYear] = useState('');
   const [modelYear, setModelYear] = useState('');
+  const [plate, setPlate] = useState('');
   const [conservation, setConservation] = useState('bom');
   const [status, setStatus] = useState('ativo');
   const [location, setLocation] = useState('');
@@ -238,6 +239,7 @@ export default function VehiclesPage() {
         v.vtr,
         v.brand,
         v.model,
+        v.plate,
         v.location,
         unitAcronym,
         functionsNames,
@@ -291,6 +293,7 @@ export default function VehiclesPage() {
     setModel('');
     setManufactureYear('');
     setModelYear('');
+    setPlate('');
     setConservation('bom');
     setStatus('ativo');
     setLocation('');
@@ -309,6 +312,7 @@ export default function VehiclesPage() {
     setModel(vehicle.model);
     setManufactureYear(vehicle.manufacture_year ? String(vehicle.manufacture_year) : '');
     setModelYear(vehicle.model_year ? String(vehicle.model_year) : '');
+    setPlate(vehicle.plate ?? '');
     setConservation(vehicle.conservation_state);
     setStatus(vehicle.status);
     setLocation(vehicle.location);
@@ -356,6 +360,7 @@ export default function VehiclesPage() {
       year: manufactureYearNumber,
       manufacture_year: manufactureYearNumber,
       model_year: modelYearNumber,
+      plate: plate?.trim() ? plate.trim().toUpperCase() : null,
       conservation_state: conservation,
       status,
       location,
@@ -456,7 +461,7 @@ export default function VehiclesPage() {
 
   return (
     <div className="flex flex-col gap-4 md:h-100vh md:flex-row md:items-stretch">
-      <div className="flex-1 space-y-4 md:flex md:flex-col">
+      <div className="flex-1 space-y-4 md:flex md:flex-col md:h-[90vh]">
         <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-end">
           <div className="flex flex-1 flex-col gap-1">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Busca</span>
@@ -710,7 +715,9 @@ export default function VehiclesPage() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <div>{v.location}</div>
+                          <div>
+                            {v.plate ? `${v.plate} • ${v.location}` : v.location}
+                          </div>
                           <div>
                             {conservationNameByCode[v.conservation_state] ??
                               CONSERVATION_LABELS[v.conservation_state] ??
@@ -756,7 +763,7 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      <aside className="mt-4 w-full rounded-lg border bg-background/60 p-4 text-sm shadow-sm md:mt-0 md:h-full md:w-96 md:overflow-auto">
+      <aside className="mt-4 w-full rounded-lg border bg-background/60 p-4 text-sm shadow-sm md:mt-0 md:h-[90vh] md:w-96 md:overflow-auto">
         <div className="mb-2">
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Viatura selecionada
@@ -832,6 +839,9 @@ export default function VehiclesPage() {
                         <div className="mt-1 text-[11px] text-muted-foreground">
                           {formatVehicleYears(v)} • {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
                         </div>
+                        {v.plate && (
+                          <div className="text-[11px] font-medium text-muted-foreground">Placa: {v.plate}</div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -966,7 +976,7 @@ export default function VehiclesPage() {
               onChange={() => setHasUnsavedChanges(true)}
               className="space-y-3 text-xs"
             >
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Unidade</span>
                   <select
@@ -1030,6 +1040,14 @@ export default function VehiclesPage() {
                     value={modelYear}
                     onChange={(e) => setModelYear(e.target.value)}
                     placeholder="Ex: 2021"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Placa</span>
+                  <Input
+                    value={plate}
+                    onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                    placeholder="Ex: ABC1D23"
                   />
                 </div>
                 <div className="space-y-1">
