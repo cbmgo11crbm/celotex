@@ -4,3 +4,5 @@ node_modules/
 dist/
 supabase/.temp/
 supabase/.branches/
+data_dump*.sql
+data_dump_*/
