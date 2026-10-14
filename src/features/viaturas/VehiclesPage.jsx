@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUnits } from '../dashboard/hooks.js';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
@@ -72,6 +72,8 @@ export default function VehiclesPage() {
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const [cropTargetVehicle, setCropTargetVehicle] = useState(null);
+  const galleryInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const [cropOriginalFile, setCropOriginalFile] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -351,14 +353,13 @@ export default function VehiclesPage() {
     }
   }
 
-  async function handlePhotoChange(event, vehicle) {
+  async function handlePhotoChange(event) {
     const file = event.target.files?.[0];
-    if (!file || !vehicle) return;
+    if (!file || !cropTargetVehicle) return;
 
     const reader = new FileReader();
     reader.onloadend = () => {
       setCropImageSrc(reader.result);
-      setCropTargetVehicle(vehicle);
       setCropOriginalFile(file);
       setIsCropOpen(true);
     };
@@ -797,11 +798,46 @@ export default function VehiclesPage() {
                     <div className="mb-1 text-[11px] font-medium uppercase tracking-wide">Foto</div>
                     <div className="flex flex-col gap-2">
                       <input
+                        ref={galleryInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
-                        onChange={(event) => handlePhotoChange(event, v)}
-                        className="text-[11px] text-muted-foreground"
+                        className="hidden"
+                        onChange={(event) => handlePhotoChange(event)}
                       />
+                      <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(event) => handlePhotoChange(event)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-[11px]"
+                          onClick={() => {
+                            setCropTargetVehicle(v);
+                            galleryInputRef.current?.click();
+                          }}
+                        >
+                          Galeria
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-[11px]"
+                          onClick={() => {
+                            setCropTargetVehicle(v);
+                            cameraInputRef.current?.click();
+                          }}
+                        >
+                          Câmera
+                        </Button>
+                      </div>
                       {photoUrlById.get(v.id) && (
                         <button
                           type="button"

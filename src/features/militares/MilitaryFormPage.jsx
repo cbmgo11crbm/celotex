@@ -181,7 +181,8 @@ export default function MilitaryFormPage() {
   const [selectedSectionIds, setSelectedSectionIds] = useState([]);
   const [selectedCourseIds, setSelectedCourseIds] = useState([]);
   const [platoon, setPlatoon] = useState('');
-  const fileInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const [tafPeriod, setTafPeriod] = useState('');
   const [tafMention, setTafMention] = useState('');
@@ -1246,7 +1247,7 @@ export default function MilitaryFormPage() {
                   </div>
                   <div className="flex w-full flex-col gap-2 text-xs">
                     <input
-                      ref={fileInputRef}
+                      ref={galleryInputRef}
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       disabled={isInactive}
@@ -1266,16 +1267,50 @@ export default function MilitaryFormPage() {
                       }}
                       className="hidden"
                     />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="self-start text-[11px]"
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      capture="environment"
                       disabled={isInactive}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {photoUrl ? 'Alterar foto' : 'Selecionar foto'}
-                    </Button>
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setCropImageSrc(reader.result);
+                          setCropOriginalFile(file);
+                          setIsCropOpen(true);
+                        };
+                        reader.readAsDataURL(file);
+
+                        event.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex w-full flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="text-[11px]"
+                        disabled={isInactive}
+                        onClick={() => galleryInputRef.current?.click()}
+                      >
+                        {photoUrl ? 'Alterar foto' : 'Galeria'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="text-[11px]"
+                        disabled={isInactive}
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        Câmera
+                      </Button>
+                    </div>
                     {photoUrl && !isInactive && (
                       <button
                         type="button"
