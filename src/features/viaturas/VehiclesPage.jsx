@@ -36,6 +36,35 @@ const CONSERVATION_LABELS = {
   inservivel: 'Inservível',
 };
 
+const COMMON_BRANDS = [
+  'Agrale',
+  'Agritália',
+  'Agritech',
+  'Agrale',
+  'Agrale-Deutz',
+  'Chevrolet',
+  'Citroën',
+  'Fiat',
+  'Ford',
+  'Honda',
+  'Hyundai',
+  'Iveco',
+  'JAC',
+  'Jeep',
+  'Kia',
+  'Mack',
+  'MAN',
+  'Mercedes-Benz',
+  'Mitsubishi',
+  'Nissan',
+  'Peugeot',
+  'Renault',
+  'Scania',
+  'Toyota',
+  'Volkswagen',
+  'Volvo',
+];
+
 function formatNumber(value) {
   if (value == null) return '-';
   return new Intl.NumberFormat('pt-BR').format(Number(value));
@@ -44,6 +73,19 @@ function formatNumber(value) {
 function formatYear(year) {
   if (!year) return '-';
   return String(year);
+}
+
+function formatVehicleYears(v) {
+  const m = v.manufacture_year ?? v.year;
+  const mod = v.model_year;
+
+  if (m && mod) {
+    const modShort = String(mod).slice(-2);
+    return `${m}/${modShort}`;
+  }
+  if (m) return `Ano ${m}`;
+  if (mod) return `Ano ${mod}`;
+  return '-';
 }
 
 export default function VehiclesPage() {
@@ -62,7 +104,8 @@ export default function VehiclesPage() {
   const [vtr, setVtr] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
+  const [manufactureYear, setManufactureYear] = useState('');
+  const [modelYear, setModelYear] = useState('');
   const [conservation, setConservation] = useState('bom');
   const [status, setStatus] = useState('ativo');
   const [location, setLocation] = useState('');
@@ -91,7 +134,7 @@ export default function VehiclesPage() {
     data: vehicles,
     isLoading: isLoadingVehicles,
     error: vehiclesError,
-  } = useVehicles({ unitId: currentUnitId, status: statusFilter, search: debouncedSearch, showInactive });
+  } = useVehicles({ unitId: currentUnitId, status: 'all', search: '', showInactive });
 
   const { data: functionCatalog = [] } = useVehicleFunctionCatalog();
 
@@ -171,6 +214,10 @@ export default function VehiclesPage() {
 
     let base = vehicles;
 
+    if (statusFilter && statusFilter !== 'all') {
+      base = base.filter((v) => v.status === statusFilter);
+    }
+
     if (functionFilter && functionFilter !== 'all') {
       base = base.filter((v) => {
         const funcs = functionsByVehicle[v.id] ?? [];
@@ -178,7 +225,7 @@ export default function VehiclesPage() {
       });
     }
 
-    const term = debouncedSearch.trim().toLowerCase();
+    const term = (debouncedSearch ?? '').trim().toLowerCase();
     if (!term) return base;
 
     return base.filter((v) => {
@@ -198,7 +245,7 @@ export default function VehiclesPage() {
 
       return haystacks.some((value) => value && value.toLowerCase().includes(term));
     });
-  }, [vehicles, functionsByVehicle, functionFilter, debouncedSearch, units]);
+  }, [vehicles, functionsByVehicle, functionFilter, statusFilter, debouncedSearch, units]);
 
   const [photoUrlById, setPhotoUrlById] = useState(new Map());
 
@@ -242,7 +289,8 @@ export default function VehiclesPage() {
     setVtr('');
     setBrand('');
     setModel('');
-    setYear('');
+    setManufactureYear('');
+    setModelYear('');
     setConservation('bom');
     setStatus('ativo');
     setLocation('');
@@ -259,7 +307,8 @@ export default function VehiclesPage() {
     setVtr(vehicle.vtr);
     setBrand(vehicle.brand);
     setModel(vehicle.model);
-    setYear(vehicle.year ? String(vehicle.year) : '');
+    setManufactureYear(vehicle.manufacture_year ? String(vehicle.manufacture_year) : '');
+    setModelYear(vehicle.model_year ? String(vehicle.model_year) : '');
     setConservation(vehicle.conservation_state);
     setStatus(vehicle.status);
     setLocation(vehicle.location);
@@ -282,14 +331,20 @@ export default function VehiclesPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!unitId || !vtr || !brand || !model || !year || !location) {
+    if (!unitId || !vtr || !brand || !model || !manufactureYear || !location) {
       toast.error('Preencha todos os campos obrigatórios da viatura.');
       return;
     }
 
-    const yearNumber = Number(year);
-    if (!Number.isInteger(yearNumber) || yearNumber < 1900 || yearNumber > 2100) {
-      toast.error('Ano da viatura inválido.');
+    const manufactureYearNumber = Number(manufactureYear);
+    if (!Number.isInteger(manufactureYearNumber) || manufactureYearNumber < 1900 || manufactureYearNumber > 2100) {
+      toast.error('Ano de fabricação inválido.');
+      return;
+    }
+
+    const modelYearNumber = modelYear ? Number(modelYear) : null;
+    if (modelYear && (!Number.isInteger(modelYearNumber) || modelYearNumber < 1900 || modelYearNumber > 2100)) {
+      toast.error('Ano modelo inválido.');
       return;
     }
 
@@ -298,7 +353,9 @@ export default function VehiclesPage() {
       vtr,
       brand,
       model,
-      year: yearNumber,
+      year: manufactureYearNumber,
+      manufacture_year: manufactureYearNumber,
+      model_year: modelYearNumber,
       conservation_state: conservation,
       status,
       location,
@@ -445,8 +502,34 @@ export default function VehiclesPage() {
               </option>
             ))}
           </select>
+          </div>
+          <div className="flex w-full flex-col gap-1 md:w-48">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Função</span>
+            <select
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={functionFilter}
+              onChange={(e) => {
+                setFunctionFilter(e.target.value);
+                setSelectedId(null);
+              }}
+            >
+              <option value="all">Todas</option>
+              {functionCatalog.map((fn) => (
+                <option key={fn.id} value={fn.id}>
+                  {fn.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="h-9"
+            onClick={openCreateModal}
+          >
+            Nova Viatura
+          </Button>
         </div>
-      </div>
 
       {unitsError && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
@@ -476,7 +559,7 @@ export default function VehiclesPage() {
                     <th className="px-3 py-2 text-left font-medium">&nbsp;</th>
                     <th className="px-3 py-2 text-left font-medium">VTR</th>
                     <th className="px-3 py-2 text-left font-medium">Marca / Modelo</th>
-                    <th className="px-3 py-2 text-left font-medium">Ano</th>
+                    <th className="px-3 py-2 text-left font-medium">Ano Fab./Mod.</th>
                     <th className="px-3 py-2 text-left font-medium">Unidade</th>
                     <th className="px-3 py-2 text-left font-medium">Funções</th>
                     <th className="px-3 py-2 text-left font-medium">Estado</th>
@@ -527,7 +610,7 @@ export default function VehiclesPage() {
                           {item.brand} / {item.model}
                         </td>
                         <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                          {formatYear(item.year)}
+                          {formatVehicleYears(item)}
                         </td>
                         <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
                           {units?.find((u) => u.id === item.unit_id)?.acronym ?? '-'}
@@ -543,19 +626,17 @@ export default function VehiclesPage() {
                             item.conservation_state}
                         </td>
                         <td className="px-3 py-2 align-middle text-xs">
-                          {item.status === 'ativo' ? (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-                              {statusNameByCode[item.status] ?? 'Ativa'}
-                            </span>
-                          ) : item.status === 'baixado' ? (
-                            <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
-                              {statusNameByCode[item.status] ?? 'Baixada'}
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                              {statusNameByCode[item.status] ?? 'Cautelada'}
-                            </span>
-                          )}
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              item.status === 'ativo'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : item.status === 'baixado'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {statusNameByCode[item.status] || item.status || '—'}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -606,40 +687,30 @@ export default function VehiclesPage() {
                         </button>
                       </div>
                       <div className="space-y-1 p-3 text-xs">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-semibold text-foreground">{v.vtr}</div>
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <span
-                              className={
-                                v.status === 'ativo'
-                                  ? 'font-semibold text-emerald-700'
-                                  : v.status === 'baixado'
-                                    ? 'font-semibold text-red-600'
-                                    : 'font-semibold text-sky-700'
-                              }
-                            >
-                              {(
-                                statusNameByCode[v.status] ||
-                                (v.status === 'ativo'
-                                  ? 'ATIVA'
-                                  : v.status === 'baixado'
-                                    ? 'BAIXADA'
-                                    : 'CAUTELADA')
-                              ).toUpperCase()}
-                            </span>
-                            <span>
-                              •{' '}
-                              {conservationNameByCode[v.conservation_state] ??
-                                CONSERVATION_LABELS[v.conservation_state] ??
-                                v.conservation_state}
-                            </span>
-                            <span>
-                              • {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
-                            </span>
-                          </div>
+                        <div className="text-sm font-semibold text-foreground">{v.vtr}</div>
+                        <div className="text-base font-bold text-foreground">
+                          {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
+                        </div>
+                        <div className="flex items-center justify-end gap-1 text-[11px]">
+                          <span
+                            className={
+                              v.status === 'ativo'
+                                ? 'font-semibold text-emerald-700'
+                                : v.status === 'baixado'
+                                  ? 'font-semibold text-red-600'
+                                  : 'font-semibold text-amber-700'
+                            }
+                          >
+                            {(statusNameByCode[v.status] || v.status || '—').toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground">
+                          {conservationNameByCode[v.conservation_state] ??
+                            CONSERVATION_LABELS[v.conservation_state] ??
+                            v.conservation_state}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
-                          {v.brand} / {v.model} • Ano {formatYear(v.year)}
+                          {v.brand} / {v.model} • {formatVehicleYears(v)}
                         </div>
                         <div className="text-[11px] text-muted-foreground">{v.location}</div>
                         <div className="mt-1 flex flex-wrap gap-1">
@@ -755,7 +826,7 @@ export default function VehiclesPage() {
                         <div className="text-sm font-semibold text-foreground">{v.vtr}</div>
                         <div>{v.brand} / {v.model}</div>
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          Ano {formatYear(v.year)} • {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
+                          {formatVehicleYears(v)} • {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
                         </div>
                       </div>
                     </div>
@@ -763,27 +834,40 @@ export default function VehiclesPage() {
 
                   <div className="rounded-md bg-muted/40 p-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide">Situação</div>
-                    <div className="mt-1 text-[11px]">
-                      Estado de conservação:{' '}
-                      {conservationNameByCode[v.conservation_state] ??
-                        CONSERVATION_LABELS[v.conservation_state] ??
-                        v.conservation_state}
-                    </div>
-                    <div className="mt-1 text-[11px]">
-                      Status:{' '}
-                      {statusNameByCode[v.status] ??
-                        (v.status === 'ativo'
-                          ? 'Ativa'
-                          : v.status === 'baixado'
-                            ? 'Baixada'
-                            : 'Cautelada')}
-                    </div>
-                    <div className="mt-1 text-[11px]">Localização: {v.location}</div>
-                    <div className="mt-1 text-[11px]">
-                      Funções:{' '}
-                      {(functionsByVehicle[v.id] ?? [])
-                        .map((fn) => fn.name)
-                        .join(', ') || 'Nenhuma função vinculada.'}
+                    <div className="mt-2 flex flex-col gap-2">
+                      <div className="inline-flex self-start rounded-md bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-800">
+                        Conservação: {conservationNameByCode[v.conservation_state] ??
+                          CONSERVATION_LABELS[v.conservation_state] ??
+                          v.conservation_state}
+                      </div>
+                      <div
+                        className={`inline-flex self-start rounded-md px-2 py-1 text-[11px] font-medium ${
+                          v.status === 'ativo'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : v.status === 'baixado'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        Status: {statusNameByCode[v.status] || v.status || '—'}
+                      </div>
+                      <div className="inline-flex self-start rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-800">
+                        Localização: {v.location}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(functionsByVehicle[v.id] ?? []).map((fn) => (
+                          <span
+                            key={fn.id}
+                            className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium"
+                            style={{
+                              backgroundColor: fn.color_hex || '#f3f4f6',
+                              color: fn.color_hex ? '#ffffff' : '#374151',
+                            }}
+                          >
+                            {fn.name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -904,11 +988,19 @@ export default function VehiclesPage() {
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Marca</span>
-                  <Input
+                  <input
+                    list="brand-list"
+                    type="text"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     placeholder="Ex: Toyota"
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
+                  <datalist id="brand-list">
+                    {COMMON_BRANDS.map((b) => (
+                      <option key={b} value={b} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Modelo</span>
@@ -919,12 +1011,21 @@ export default function VehiclesPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ano</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ano de Fabricação</span>
                   <Input
                     type="number"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
+                    value={manufactureYear}
+                    onChange={(e) => setManufactureYear(e.target.value)}
                     placeholder="Ex: 2020"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ano Modelo</span>
+                  <Input
+                    type="number"
+                    value={modelYear}
+                    onChange={(e) => setModelYear(e.target.value)}
+                    placeholder="Ex: 2021"
                   />
                 </div>
                 <div className="space-y-1">
@@ -969,7 +1070,8 @@ export default function VehiclesPage() {
                       <>
                         <option value="ativo">Ativa</option>
                         <option value="baixado">Baixada</option>
-                        <option value="cautelado">Cautelada</option>
+                        <option value="cautelado_outra_obm">Cautelado para outra OBM</option>
+                        <option value="em_baixa_patrimonial">Em processo de Baixa Patrimonial</option>
                       </>
                     )}
                     {statusCatalog.map((st) => (
@@ -1054,12 +1156,9 @@ export default function VehiclesPage() {
                             : 'Viatura reativada com sucesso.',
                         );
 
-                        // Se a viatura ficar escondida pelo filtro atual, limpamos a seleção
-                        if (!targetInactive && showInactive) {
-                          // nada a fazer, continua visível na aba de inativos
-                        } else if (targetInactive && !showInactive) {
-                          setSelectedId(null);
-                        }
+                        setIsModalOpen(false);
+                        setShowInactive(targetInactive);
+                        setSelectedId(null);
                       } catch (error) {
                         if (error?.code === '42501') {
                           toast.error('Você não possui permissão para alterar a situação desta viatura.');

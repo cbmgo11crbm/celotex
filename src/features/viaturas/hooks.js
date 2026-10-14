@@ -7,7 +7,7 @@ export function useVehicles({ unitId, status = 'all', search = '', showInactive 
     queryFn: async () => {
       let query = supabase
         .from('vehicles')
-        .select('id, unit_id, vtr, brand, model, year, conservation_state, status, location, notes, photo_path, is_inactive, created_at, updated_at')
+        .select('id, unit_id, vtr, brand, model, year, manufacture_year, model_year, conservation_state, status, location, notes, photo_path, is_inactive, created_at, updated_at')
         .order('vtr', { ascending: true });
 
       if (unitId) {
