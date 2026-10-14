@@ -132,7 +132,7 @@ export default function MilitaryListPage() {
     isLoading: isLoadingSearch,
     error: searchError,
   } = useMilitarySearch({
-    query: debouncedSearch,
+    query: '',
     unitId: currentUnitId,
     limit: 10000,
     inactiveOnly: showInactive,
@@ -255,7 +255,37 @@ export default function MilitaryListPage() {
   const filteredResults = useMemo(() => {
     if (!results) return [];
 
+    const term = debouncedSearch ? debouncedSearch.trim().toLowerCase() : '';
+    const digits = term.replace(/\D/g, '');
+
     return results.filter((item) => {
+      // Filtro por texto (nome, nome de guerra, RG, CPF, seção, ala, tipo sanguíneo)
+      if (term) {
+        const haystack = [
+          item.full_name,
+          item.war_name,
+          item.rg,
+          item.phone,
+          item.cpf,
+          item.unit_acronym,
+          item.platoon,
+          item.blood_type,
+          item.last_taf_mention,
+          sectionsByMilitary[item.id]?.map((s) => s.acronym).join(' '),
+          sectionsByMilitary[item.id]?.map((s) => s.name).join(' '),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        const termMatch = haystack.includes(term);
+        const digitMatch = digits && item.cpf?.replace(/\D/g, '').includes(digits);
+
+        if (!termMatch && !digitMatch) {
+          return false;
+        }
+      }
+
       // Filtra por Situação (Ativo / Afastados)
       if (situationFilter === 'ativos' && item.activity_status !== 'ativo') {
         return false;
@@ -282,7 +312,7 @@ export default function MilitaryListPage() {
 
       return true;
     });
-  }, [results, situationFilter, activityFilter, tafFilter]);
+  }, [results, debouncedSearch, situationFilter, activityFilter, tafFilter, sectionsByMilitary]);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
