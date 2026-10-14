@@ -54,6 +54,72 @@ async function blobToImageUrl(blob) {
   });
 }
 
+async function compressImageBlob(blob, options = {}) {
+  const {
+    maxWidth = 1200,
+    maxHeight = 1200,
+    maxSizeKB = 1024,
+    mimeType = 'image/jpeg',
+    minQuality = 0.6,
+  } = options;
+
+  const image = await getImageElement(await blobToImageUrl(blob));
+
+  let width = image.width;
+  let height = image.height;
+
+  if (width > maxWidth || height > maxHeight) {
+    const scale = Math.min(maxWidth / width, maxHeight / height, 1);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const maxBytes = maxSizeKB * 1024;
+  let quality = 0.92;
+
+  while (quality >= minQuality) {
+    const compressed = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => {
+          if (!b) {
+            reject(new Error('Falha ao comprimir imagem.'));
+            return;
+          }
+          resolve(b);
+        },
+        mimeType,
+        quality,
+      );
+    });
+
+    if (compressed.size <= maxBytes) {
+      return compressed;
+    }
+
+    quality = Math.max(minQuality, quality - 0.05);
+  }
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (!b) {
+          reject(new Error('Falha ao comprimir imagem.'));
+          return;
+        }
+        resolve(b);
+      },
+      mimeType,
+      minQuality,
+    );
+  });
+}
+
 function imageUrlToBlob(imageUrl, mimeType = 'image/png') {
   return fetch(imageUrl)
     .then((res) => res.blob())
@@ -190,7 +256,14 @@ export default function ImageCropDialog({
         return;
       }
       const finalBlob = await imageUrlToBlob(url, 'image/png');
-      onConfirm?.(finalBlob);
+      const compressedBlob = await compressImageBlob(finalBlob, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        maxSizeKB: 1024,
+        mimeType: 'image/jpeg',
+        minQuality: 0.6,
+      });
+      onConfirm?.(compressedBlob);
     } catch (error) {
       console.error(error);
       onCancel?.();
