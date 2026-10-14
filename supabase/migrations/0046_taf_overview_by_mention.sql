@@ -1,6 +1,8 @@
 begin;
 
 -- Expande taf_latest_overview para retornar contagens de cada menção e "não fez".
+drop function if exists public.taf_latest_overview(uuid);
+
 create or replace function public.taf_latest_overview(p_unit_id uuid default null)
 returns table (
   unit_id uuid,
