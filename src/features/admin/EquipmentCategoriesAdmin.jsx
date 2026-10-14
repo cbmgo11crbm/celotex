@@ -26,6 +26,7 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
 
   const [name, setName] = useState('');
   const [color, setColor] = useState('#0ea5e9');
+  const [editingId, setEditingId] = useState(null);
 
   const createMutation = useMutation({
     mutationFn: async (values) => {
@@ -55,17 +56,21 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
     },
   });
 
-  const updateColorMutation = useMutation({
-    mutationFn: async ({ id, colorHex }) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, values }) => {
       const { error: upError } = await supabase
         .from('equipment_categories')
-        .update({ color_hex: colorHex })
+        .update(values)
         .eq('id', id);
       if (upError) throw upError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment-categories'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-categories', 'admin'] });
+      toast.success('Categoria de equipamento atualizada com sucesso.');
+      setEditingId(null);
+      setName('');
+      setColor('#0ea5e9');
     },
   });
 
@@ -117,9 +122,12 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
   });
 
   const isBusy =
-    createMutation.isPending || toggleActiveMutation.isPending || updateColorMutation.isPending || deleteMutation.isPending;
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    toggleActiveMutation.isPending ||
+    deleteMutation.isPending;
 
-  async function handleCreate(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!canEdit) return;
     if (!name.trim()) {
@@ -128,27 +136,27 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
     }
 
     try {
-      await createMutation.mutateAsync({ name: name.trim(), is_active: true, color_hex: color || null });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          values: { name: name.trim(), color_hex: color || null },
+        });
+      } else {
+        await createMutation.mutateAsync({ name: name.trim(), is_active: true, color_hex: color || null });
+      }
     } catch (err) {
       if (err?.code === '42501') {
         toast.error('Você não possui permissão para alterar as categorias de equipamentos.');
       } else {
-        toast.error(err?.message || 'Erro ao criar categoria de equipamento.');
+        toast.error(err?.message || 'Erro ao salvar categoria de equipamento.');
       }
     }
   }
 
-  async function handleChangeColor(cat, newColor) {
-    if (!canEdit) return;
-    try {
-      await updateColorMutation.mutateAsync({ id: cat.id, colorHex: newColor });
-    } catch (err) {
-      if (err?.code === '42501') {
-        toast.error('Você não possui permissão para alterar as categorias de equipamentos.');
-      } else {
-        toast.error(err?.message || 'Erro ao atualizar a cor da categoria de equipamento.');
-      }
-    }
+  function handleEdit(cat) {
+    setEditingId(cat.id);
+    setName(cat.name);
+    setColor(cat.color_hex || '#0ea5e9');
   }
 
   async function handleDelete(cat) {
@@ -214,12 +222,9 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
               <li key={cat.id} className="flex items-center justify-between px-3 py-1.5">
                 <div className="flex items-center gap-2">
                   <span className={cat.is_active ? '' : 'text-muted-foreground line-through'}>{cat.name}</span>
-                  <input
-                    type="color"
-                    value={cat.color_hex || '#0ea5e9'}
-                    onChange={(e) => handleChangeColor(cat, e.target.value)}
-                    disabled={!canEdit || isBusy}
-                    className="h-5 w-8 cursor-pointer border border-muted bg-background p-0"
+                  <span
+                    className="inline-block h-4 w-4 rounded border"
+                    style={{ backgroundColor: cat.color_hex || '#0ea5e9' }}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -228,6 +233,14 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
                   </span>
                   {canEdit && (
                     <>
+                      <button
+                        type="button"
+                        className="text-[11px] text-blue-700 hover:underline disabled:opacity-60"
+                        disabled={isBusy}
+                        onClick={() => handleEdit(cat)}
+                      >
+                        Editar
+                      </button>
                       <button
                         type="button"
                         className="text-[11px] text-emerald-700 hover:underline disabled:opacity-60"
@@ -254,9 +267,11 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
       </div>
 
       {canEdit && (
-        <form onSubmit={handleCreate} className="space-y-2 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-2 text-xs">
           <div className="space-y-1">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Nova categoria</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {editingId ? 'Editar categoria' : 'Nova categoria'}
+            </span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -272,9 +287,23 @@ export default function EquipmentCategoriesAdmin({ canEdit }) {
               />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {editingId && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingId(null);
+                  setName('');
+                  setColor('#0ea5e9');
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
             <Button type="submit" size="sm" disabled={isBusy}>
-              Adicionar categoria
+              {editingId ? 'Salvar alterações' : 'Adicionar categoria'}
             </Button>
           </div>
         </form>

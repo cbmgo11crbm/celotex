@@ -687,32 +687,36 @@ export default function VehiclesPage() {
                         </button>
                       </div>
                       <div className="space-y-1 p-3 text-xs">
-                        <div className="text-sm font-semibold text-foreground">{v.vtr}</div>
-                        <div className="text-base font-bold text-foreground">
-                          {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-semibold text-foreground">{v.vtr}</div>
+                          <div className="text-[11px] font-medium text-slate-500">
+                            {units?.find((u) => u.id === v.unit_id)?.acronym ?? '-'}
+                          </div>
                         </div>
-                        <div className="flex items-center justify-end gap-1 text-[11px]">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] text-muted-foreground">
+                            {v.brand} / {v.model} • {formatVehicleYears(v)}
+                          </div>
                           <span
-                            className={
+                            className={`text-[11px] font-semibold ${
                               v.status === 'ativo'
-                                ? 'font-semibold text-emerald-700'
+                                ? 'text-emerald-700'
                                 : v.status === 'baixado'
-                                  ? 'font-semibold text-red-600'
-                                  : 'font-semibold text-amber-700'
-                            }
+                                  ? 'text-red-600'
+                                  : 'text-amber-700'
+                            }`}
                           >
-                            {(statusNameByCode[v.status] || v.status || '—').toUpperCase()}
+                            {statusNameByCode[v.status] || v.status || '—'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground">
-                          {conservationNameByCode[v.conservation_state] ??
-                            CONSERVATION_LABELS[v.conservation_state] ??
-                            v.conservation_state}
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <div>{v.location}</div>
+                          <div>
+                            {conservationNameByCode[v.conservation_state] ??
+                              CONSERVATION_LABELS[v.conservation_state] ??
+                              v.conservation_state}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {v.brand} / {v.model} • {formatVehicleYears(v)}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">{v.location}</div>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {(functionsByVehicle[v.id] ?? []).map((fn) => (
                             <span
@@ -1070,8 +1074,7 @@ export default function VehiclesPage() {
                       <>
                         <option value="ativo">Ativa</option>
                         <option value="baixado">Baixada</option>
-                        <option value="cautelado_outra_obm">Cautelado para outra OBM</option>
-                        <option value="em_baixa_patrimonial">Em processo de Baixa Patrimonial</option>
+                        <option value="cautelado">Cautelada</option>
                       </>
                     )}
                     {statusCatalog.map((st) => (

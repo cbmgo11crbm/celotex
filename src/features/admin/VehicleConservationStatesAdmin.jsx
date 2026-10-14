@@ -27,6 +27,7 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [sortOrder, setSortOrder] = useState('10');
+  const [editingId, setEditingId] = useState(null);
 
   const createMutation = useMutation({
     mutationFn: async (values) => {
@@ -57,6 +58,25 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, values }) => {
+      const { error: upError } = await supabase
+        .from('vehicle_conservation_states')
+        .update(values)
+        .eq('id', id);
+      if (upError) throw upError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle-conservation-states'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicle-conservation-states', 'admin'] });
+      toast.success('Estado de conservação atualizado com sucesso.');
+      setEditingId(null);
+      setName('');
+      setSortOrder('10');
+      setCode('');
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       const { error: delError } = await supabase
@@ -72,33 +92,55 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
     },
   });
 
-  const isBusy = createMutation.isPending || toggleActiveMutation.isPending || deleteMutation.isPending;
+  const isBusy =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    toggleActiveMutation.isPending ||
+    deleteMutation.isPending;
 
-  async function handleCreate(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!canEdit) return;
 
-    if (!code.trim() || !name.trim()) {
-      toast.error('Informe o código e o nome do estado de conservação.');
+    if (!name.trim()) {
+      toast.error('Informe o nome do estado de conservação.');
       return;
     }
 
     const so = Number.parseInt(sortOrder, 10) || 10;
 
     try {
-      await createMutation.mutateAsync({
-        code: code.trim().toLowerCase(),
-        name: name.trim(),
-        sort_order: so,
-        is_active: true,
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          values: { name: name.trim(), sort_order: so },
+        });
+      } else {
+        if (!code.trim()) {
+          toast.error('Informe o código do estado de conservação.');
+          return;
+        }
+        await createMutation.mutateAsync({
+          code: code.trim().toLowerCase(),
+          name: name.trim(),
+          sort_order: so,
+          is_active: true,
+        });
+      }
     } catch (err) {
       if (err?.code === '42501') {
         toast.error('Você não possui permissão para alterar os estados de conservação.');
       } else {
-        toast.error(err?.message || 'Erro ao criar estado de conservação.');
+        toast.error(err?.message || 'Erro ao salvar estado de conservação.');
       }
     }
+  }
+
+  function handleEdit(st) {
+    setEditingId(st.id);
+    setCode(st.code);
+    setName(st.name);
+    setSortOrder(String(st.sort_order));
   }
 
   async function handleToggleActive(st) {
@@ -184,6 +226,14 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
                     <td className="px-2 py-1 align-middle text-right">
                       <button
                         type="button"
+                        className="mr-2 text-[11px] text-blue-700 hover:underline disabled:opacity-60"
+                        disabled={isBusy}
+                        onClick={() => handleEdit(st)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
                         className="mr-2 text-[11px] text-emerald-700 hover:underline disabled:opacity-60"
                         disabled={isBusy}
                         onClick={() => handleToggleActive(st)}
@@ -208,7 +258,7 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
       </div>
 
       {canEdit && (
-        <form onSubmit={handleCreate} className="space-y-2 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-2 text-xs">
           <div className="grid grid-cols-[1fr_2fr_1fr] gap-2">
             <div className="space-y-1">
               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Código</span>
@@ -216,6 +266,7 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Ex: novo, bom, ruim..."
+                disabled={editingId !== null}
               />
             </div>
             <div className="space-y-1">
@@ -235,9 +286,24 @@ export default function VehicleConservationStatesAdmin({ canEdit }) {
               />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {editingId && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingId(null);
+                  setCode('');
+                  setName('');
+                  setSortOrder('10');
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
             <Button type="submit" size="sm" disabled={isBusy}>
-              Adicionar estado
+              {editingId ? 'Salvar alterações' : 'Adicionar estado'}
             </Button>
           </div>
         </form>

@@ -26,6 +26,7 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
 
   const [name, setName] = useState('');
   const [color, setColor] = useState('#059669');
+  const [editingId, setEditingId] = useState(null);
 
   const createMutation = useMutation({
     mutationFn: async (values) => {
@@ -55,17 +56,21 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
     },
   });
 
-  const updateColorMutation = useMutation({
-    mutationFn: async ({ id, colorHex }) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, values }) => {
       const { error: upError } = await supabase
         .from('vehicle_functions')
-        .update({ color_hex: colorHex })
+        .update(values)
         .eq('id', id);
       if (upError) throw upError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicle-functions'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-functions', 'admin'] });
+      toast.success('Função de viatura atualizada com sucesso.');
+      setEditingId(null);
+      setName('');
+      setColor('#059669');
     },
   });
 
@@ -91,9 +96,12 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
   });
 
   const isBusy =
-    createMutation.isPending || toggleActiveMutation.isPending || updateColorMutation.isPending || deleteMutation.isPending;
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    toggleActiveMutation.isPending ||
+    deleteMutation.isPending;
 
-  async function handleCreate(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!canEdit) return;
     if (!name.trim()) {
@@ -102,27 +110,27 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
     }
 
     try {
-      await createMutation.mutateAsync({ name: name.trim(), is_active: true, color_hex: color || null });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          values: { name: name.trim(), color_hex: color || null },
+        });
+      } else {
+        await createMutation.mutateAsync({ name: name.trim(), is_active: true, color_hex: color || null });
+      }
     } catch (err) {
       if (err?.code === '42501') {
         toast.error('Você não possui permissão para alterar as funções de viaturas.');
       } else {
-        toast.error(err?.message || 'Erro ao criar função de viatura.');
+        toast.error(err?.message || 'Erro ao salvar função de viatura.');
       }
     }
   }
 
-  async function handleChangeColor(fn, newColor) {
-    if (!canEdit) return;
-    try {
-      await updateColorMutation.mutateAsync({ id: fn.id, colorHex: newColor });
-    } catch (err) {
-      if (err?.code === '42501') {
-        toast.error('Você não possui permissão para alterar as funções de viaturas.');
-      } else {
-        toast.error(err?.message || 'Erro ao atualizar a cor da função de viatura.');
-      }
-    }
+  function handleEdit(fn) {
+    setEditingId(fn.id);
+    setName(fn.name);
+    setColor(fn.color_hex || '#059669');
   }
 
   async function handleDelete(fn) {
@@ -188,12 +196,9 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
               <li key={fn.id} className="flex items-center justify-between px-3 py-1.5">
                 <div className="flex items-center gap-2">
                   <span className={fn.is_active ? '' : 'text-muted-foreground line-through'}>{fn.name}</span>
-                  <input
-                    type="color"
-                    value={fn.color_hex || '#059669'}
-                    onChange={(e) => handleChangeColor(fn, e.target.value)}
-                    disabled={!canEdit || isBusy}
-                    className="h-5 w-8 cursor-pointer border border-muted bg-background p-0"
+                  <span
+                    className="inline-block h-4 w-4 rounded border"
+                    style={{ backgroundColor: fn.color_hex || '#059669' }}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -202,6 +207,14 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
                   </span>
                   {canEdit && (
                     <>
+                      <button
+                        type="button"
+                        className="text-[11px] text-blue-700 hover:underline disabled:opacity-60"
+                        disabled={isBusy}
+                        onClick={() => handleEdit(fn)}
+                      >
+                        Editar
+                      </button>
                       <button
                         type="button"
                         className="text-[11px] text-emerald-700 hover:underline disabled:opacity-60"
@@ -228,9 +241,11 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
       </div>
 
       {canEdit && (
-        <form onSubmit={handleCreate} className="space-y-2 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-2 text-xs">
           <div className="space-y-1">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Nova função</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {editingId ? 'Editar função' : 'Nova função'}
+            </span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -246,9 +261,23 @@ export default function VehicleFunctionsAdmin({ canEdit }) {
               />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {editingId && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingId(null);
+                  setName('');
+                  setColor('#059669');
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
             <Button type="submit" size="sm" disabled={isBusy}>
-              Adicionar função
+              {editingId ? 'Salvar alterações' : 'Adicionar função'}
             </Button>
           </div>
         </form>
