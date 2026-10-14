@@ -7,6 +7,7 @@ import {
   useLeavesByMilitary,
   useMilitaryDetail,
   useMilitarySearch,
+  useRanks,
   useSectionsByMilitaryIds,
 } from './hooks.js';
 import Input from '../../components/ui/Input.jsx';
@@ -108,6 +109,11 @@ export default function MilitaryListPage() {
   const [situationFilter, setSituationFilter] = useState('all'); // all | ativos | afastados
   const [activityFilter, setActivityFilter] = useState('all'); // all | operacional | administrativo
   const [tafFilter, setTafFilter] = useState('all'); // all | E | MB | B | R | I | NF
+  const [ageMin, setAgeMin] = useState('');
+  const [ageMax, setAgeMax] = useState('');
+  const [serviceMin, setServiceMin] = useState('');
+  const [serviceMax, setServiceMax] = useState('');
+  const [rankFilter, setRankFilter] = useState('all');
   const [searchParams] = useSearchParams();
   const viewMode = searchParams.get('view') === 'table' ? 'table' : 'cards';
   const [isLeavesOpen, setIsLeavesOpen] = useState(false);
@@ -124,6 +130,8 @@ export default function MilitaryListPage() {
     isLoading: isLoadingUnits,
     error: unitsError,
   } = useUnits();
+
+  const { data: ranks = [] } = useRanks();
 
   const currentUnitId = selectedUnitId === 'all' ? null : selectedUnitId;
 
@@ -252,11 +260,39 @@ export default function MilitaryListPage() {
 
   const isLoading = isLoadingUnits || isLoadingSearch;
 
+  function calculateAge(birthDate) {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age -= 1;
+    }
+    return age;
+  }
+
+  function calculateServiceYears(inclusionDate) {
+    if (!inclusionDate) return null;
+    const today = new Date();
+    const start = new Date(inclusionDate);
+    let years = today.getFullYear() - start.getFullYear();
+    const m = today.getMonth() - start.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < start.getDate())) {
+      years -= 1;
+    }
+    return years;
+  }
+
   const filteredResults = useMemo(() => {
     if (!results) return [];
 
     const term = debouncedSearch ? debouncedSearch.trim().toLowerCase() : '';
     const digits = term.replace(/\D/g, '');
+    const ageMinNum = ageMin ? Number(ageMin) : null;
+    const ageMaxNum = ageMax ? Number(ageMax) : null;
+    const serviceMinNum = serviceMin ? Number(serviceMin) : null;
+    const serviceMaxNum = serviceMax ? Number(serviceMax) : null;
 
     return results.filter((item) => {
       // Filtro por texto (nome, nome de guerra, RG, CPF, seção, ala, tipo sanguíneo)
@@ -310,9 +346,32 @@ export default function MilitaryListPage() {
         }
       }
 
+      // Filtro por idade
+      const age = calculateAge(item.birth_date);
+      if (age !== null) {
+        if (ageMinNum !== null && age < ageMinNum) return false;
+        if (ageMaxNum !== null && age > ageMaxNum) return false;
+      } else if (ageMinNum !== null || ageMaxNum !== null) {
+        return false;
+      }
+
+      // Filtro por tempo de serviço
+      const serviceYears = calculateServiceYears(item.inclusion_date);
+      if (serviceYears !== null) {
+        if (serviceMinNum !== null && serviceYears < serviceMinNum) return false;
+        if (serviceMaxNum !== null && serviceYears > serviceMaxNum) return false;
+      } else if (serviceMinNum !== null || serviceMaxNum !== null) {
+        return false;
+      }
+
+      // Filtro por posto
+      if (rankFilter !== 'all' && item.rank_id !== rankFilter) {
+        return false;
+      }
+
       return true;
     });
-  }, [results, debouncedSearch, situationFilter, activityFilter, tafFilter, sectionsByMilitary]);
+  }, [results, debouncedSearch, situationFilter, activityFilter, tafFilter, ageMin, ageMax, serviceMin, serviceMax, rankFilter, sectionsByMilitary]);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
@@ -402,6 +461,71 @@ export default function MilitaryListPage() {
             >
               Novo militar
             </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-end">
+          <div className="w-full space-y-1 md:w-48">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Idade (anos)</span>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                value={ageMin}
+                onChange={(e) => setAgeMin(e.target.value)}
+                placeholder="Mín"
+                className="h-9 w-1/2"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                min={0}
+                value={ageMax}
+                onChange={(e) => setAgeMax(e.target.value)}
+                placeholder="Máx"
+                className="h-9 w-1/2"
+              />
+            </div>
+          </div>
+          <div className="w-full space-y-1 md:w-48">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tempo de serviço (anos)</span>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                value={serviceMin}
+                onChange={(e) => setServiceMin(e.target.value)}
+                placeholder="Mín"
+                className="h-9 w-1/2"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                min={0}
+                value={serviceMax}
+                onChange={(e) => setServiceMax(e.target.value)}
+                placeholder="Máx"
+                className="h-9 w-1/2"
+              />
+            </div>
+          </div>
+          <div className="w-full space-y-1 md:w-48">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Posto</span>
+            <select
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={rankFilter}
+              onChange={(e) => {
+                setRankFilter(e.target.value);
+                setSelectedId(null);
+              }}
+            >
+              <option value="all">Todos</option>
+              {ranks?.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.code}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
