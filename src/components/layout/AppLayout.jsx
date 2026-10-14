@@ -50,7 +50,7 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 overflow-y-auto border-r bg-background/80 p-4 shadow-sm md:flex md:h-screen md:flex-col">
+      <aside className="hidden w-52 shrink-0 overflow-y-auto border-r bg-background/80 p-3 shadow-sm md:flex md:h-screen md:flex-col">
         <div className="mb-6 flex items-center justify-between">
           <Link
             to="/app"

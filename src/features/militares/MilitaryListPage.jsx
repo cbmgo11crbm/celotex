@@ -376,27 +376,28 @@ export default function MilitaryListPage() {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
       <div className="flex-1 space-y-4 md:flex md:flex-col md:h-[90vh]">
-        <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-end">
-          <div className="flex-1 space-y-1">
-            <label htmlFor="search" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Busca rápida
+        <div className="grid grid-cols-2 gap-2 rounded-lg border bg-background p-2 text-sm md:grid-cols-12 md:items-end">
+          <div className="col-span-2 space-y-1 md:col-span-3">
+            <label htmlFor="search" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Busca
             </label>
             <Input
               id="search"
-              placeholder="Nome, nome de guerra, RG, CPF, seção ou ala"
+              placeholder="Nome, RG, CPF..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="h-8 text-xs"
             />
           </div>
-          <div className="w-full space-y-1 md:w-64">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Unidade</span>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Unidade</span>
             <select
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={selectedUnitId}
               onChange={(e) => setSelectedUnitId(e.target.value)}
               disabled={isLoadingUnits}
             >
-              <option value="all">Todas as unidades</option>
+              <option value="all">Todas</option>
               {units?.map((unit) => (
                 <option key={unit.id} value={unit.id}>
                   {unit.acronym}
@@ -404,10 +405,10 @@ export default function MilitaryListPage() {
               ))}
             </select>
           </div>
-          <div className="w-full space-y-1 md:w-40">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Situação</span>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Situação</span>
             <select
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={situationFilter}
               onChange={(e) => {
                 setSituationFilter(e.target.value);
@@ -419,10 +420,10 @@ export default function MilitaryListPage() {
               <option value="afastados">Afastados</option>
             </select>
           </div>
-          <div className="w-full space-y-1 md:w-48">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Atividade</span>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Atividade</span>
             <select
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={activityFilter}
               onChange={(e) => {
                 setActivityFilter(e.target.value);
@@ -430,14 +431,14 @@ export default function MilitaryListPage() {
               }}
             >
               <option value="all">Todas</option>
-              <option value="operacional">Operacional</option>
-              <option value="administrativo">Administrativo</option>
+              <option value="operacional">Op.</option>
+              <option value="administrativo">Adm.</option>
             </select>
           </div>
-          <div className="w-full space-y-1 md:w-40">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Último TAF</span>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">TAF</span>
             <select
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={tafFilter}
               onChange={(e) => {
                 setTafFilter(e.target.value);
@@ -453,66 +454,10 @@ export default function MilitaryListPage() {
               <option value="NF">NF</option>
             </select>
           </div>
-          <div className="mt-3 flex justify-end md:mt-0 md:w-auto">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => navigate('/app/militares/novo')}
-            >
-              Novo militar
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-end">
-          <div className="w-full space-y-1 md:w-48">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Idade (anos)</span>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                value={ageMin}
-                onChange={(e) => setAgeMin(e.target.value)}
-                placeholder="Mín"
-                className="h-9 w-1/2"
-              />
-              <span className="text-muted-foreground">-</span>
-              <Input
-                type="number"
-                min={0}
-                value={ageMax}
-                onChange={(e) => setAgeMax(e.target.value)}
-                placeholder="Máx"
-                className="h-9 w-1/2"
-              />
-            </div>
-          </div>
-          <div className="w-full space-y-1 md:w-48">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tempo de serviço (anos)</span>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                value={serviceMin}
-                onChange={(e) => setServiceMin(e.target.value)}
-                placeholder="Mín"
-                className="h-9 w-1/2"
-              />
-              <span className="text-muted-foreground">-</span>
-              <Input
-                type="number"
-                min={0}
-                value={serviceMax}
-                onChange={(e) => setServiceMax(e.target.value)}
-                placeholder="Máx"
-                className="h-9 w-1/2"
-              />
-            </div>
-          </div>
-          <div className="w-full space-y-1 md:w-48">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Posto</span>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Posto</span>
             <select
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={rankFilter}
               onChange={(e) => {
                 setRankFilter(e.target.value);
@@ -526,6 +471,60 @@ export default function MilitaryListPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Idade</span>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min={0}
+                value={ageMin}
+                onChange={(e) => setAgeMin(e.target.value)}
+                placeholder="Min"
+                className="h-8 w-14 text-center text-xs"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                min={0}
+                value={ageMax}
+                onChange={(e) => setAgeMax(e.target.value)}
+                placeholder="Max"
+                className="h-8 w-14 text-center text-xs"
+              />
+            </div>
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Serviço</span>
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min={0}
+                value={serviceMin}
+                onChange={(e) => setServiceMin(e.target.value)}
+                placeholder="Min"
+                className="h-8 w-14 text-center text-xs"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                min={0}
+                value={serviceMax}
+                onChange={(e) => setServiceMax(e.target.value)}
+                placeholder="Max"
+                className="h-8 w-14 text-center text-xs"
+              />
+            </div>
+          </div>
+          <div className="col-span-2 flex justify-end md:col-span-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/app/militares/novo')}
+              className="h-8"
+            >
+              Novo
+            </Button>
           </div>
         </div>
 
