@@ -151,7 +151,7 @@ function ServiceTimeSection({ overview, isLoading }) {
       ) : (
         <div className="space-y-3 text-xs">
           <EChartBase
-            height={200}
+            height={180}
             option={{
               grid: { left: '4%', right: '4%', top: 10, bottom: 30, containLabel: true },
               tooltip: {
@@ -191,6 +191,9 @@ function ServiceTimeSection({ overview, isLoading }) {
               ],
             }}
           />
+          <p className="text-[10px] text-muted-foreground">
+            * Não conta averbações ou afastamentos sem contagem de tempo.
+          </p>
         </div>
       )}
     </div>
@@ -245,71 +248,120 @@ function PersonnelAgeSection({ ageDistribution, isLoading }) {
     '#004D40',
   ];
 
+  const totalAge = normalizedBuckets.reduce((sum, b) => sum + (b.total ?? 0), 0);
+
   return (
-    <div className="flex h-full flex-col rounded-lg border bg-background p-4">
+    <div className="rounded-lg border bg-background p-4">
       <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         Idade do efetivo
       </div>
       {isLoading ? (
-        <div className="h-[220px] animate-pulse rounded-md bg-muted" />
+        <div className="h-[360px] animate-pulse rounded-md bg-muted" />
       ) : normalizedBuckets.length === 0 ? (
         <p className="text-xs text-muted-foreground">Nenhum militar encontrado para o filtro atual.</p>
       ) : (
-        <EChartBase
-          height={220}
-          option={{
-            grid: { left: '6%', right: '4%', top: 20, bottom: 50, containLabel: true },
-            tooltip: {
-              trigger: 'axis',
-              axisPointer: { type: 'shadow' },
-              formatter: (params) => {
-                const p = params[0];
-                const d = p.data || {};
-                return [
-                  `Faixa etária: ${d.bucketLabel}`,
-                  `${formatNumber(d.total)} militares`,
-                  `${formatNumber(d.active)} em atividade`,
-                ].join('<br/>');
+        <div className="space-y-4">
+          <EChartBase
+            height={180}
+            option={{
+              grid: { left: '6%', right: '4%', top: 20, bottom: 50, containLabel: true },
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: (params) => {
+                  const p = params[0];
+                  const d = p.data || {};
+                  return [
+                    `Faixa etária: ${d.bucketLabel}`,
+                    `${formatNumber(d.total)} militares`,
+                    `${formatNumber(d.active)} em atividade`,
+                  ].join('<br/>');
+                },
               },
-            },
-            xAxis: {
-              type: 'category',
-              data: normalizedBuckets.map((b) => b.bucketLabel),
-              axisLabel: { fontSize: 10, rotate: 45, interval: 0 },
-            },
-            yAxis: {
-              type: 'value',
-              splitLine: { lineStyle: { type: 'dashed' } },
-            },
-            series: [
-              {
-                type: 'bar',
-                data: normalizedBuckets.map((b) => ({
-                  value: b.total ?? 0,
-                  bucketLabel: b.bucketLabel,
-                  total: b.total ?? 0,
-                  active: b.active ?? 0,
-                  index: b.index,
-                })),
-                itemStyle: {
-                  color: (params) => {
-                    const idx = params.data.index ?? 0;
-                    return palette[idx % palette.length];
+              xAxis: {
+                type: 'category',
+                data: normalizedBuckets.map((b) => b.bucketLabel),
+                axisLabel: { fontSize: 10, rotate: 45, interval: 0 },
+              },
+              yAxis: {
+                type: 'value',
+                splitLine: { lineStyle: { type: 'dashed' } },
+              },
+              series: [
+                {
+                  type: 'bar',
+                  data: normalizedBuckets.map((b) => ({
+                    value: b.total ?? 0,
+                    bucketLabel: b.bucketLabel,
+                    total: b.total ?? 0,
+                    active: b.active ?? 0,
+                    index: b.index,
+                  })),
+                  itemStyle: {
+                    color: (params) => {
+                      const idx = params.data.index ?? 0;
+                      return palette[idx % palette.length];
+                    },
+                  },
+                  barWidth: 26,
+                  label: {
+                    show: true,
+                    formatter: (p) => `${p.value ?? 0}`,
+                    position: 'top',
+                    fontSize: 10,
+                    fontWeight: 'bolder',
+                    color: '#000000',
                   },
                 },
-                barWidth: 26,
-                label: {
-                  show: true,
-                  formatter: (p) => `${p.value ?? 0}`,
-                  position: 'top',
-                  fontSize: 10,
-                  fontWeight: 'bolder',
-                  color: '#000000',
+              ],
+            }}
+          />
+          <EChartBase
+            height={160}
+            option={{
+              tooltip: {
+                trigger: 'item',
+                formatter: (params) => {
+                  const pct = params.percent?.toFixed(1) ?? '0.0';
+                  return `${params.name}<br/>${formatNumber(params.value)} militares (${pct}%)`;
                 },
               },
-            ],
-          }}
-        />
+              legend: {
+                type: 'scroll',
+                bottom: 0,
+                textStyle: { fontSize: 9 },
+              },
+              series: [
+                {
+                  type: 'pie',
+                  radius: ['40%', '70%'],
+                  center: ['50%', '45%'],
+                  avoidLabelOverlap: true,
+                  itemStyle: {
+                    borderRadius: 6,
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                  },
+                  label: {
+                    show: true,
+                    formatter: '{d}%',
+                    fontSize: 10,
+                  },
+                  emphasis: {
+                    label: { show: true, fontSize: 12, fontWeight: 'bold' },
+                  },
+                  data: normalizedBuckets
+                    .filter((b) => (b.total ?? 0) > 0)
+                    .map((b) => ({
+                      value: b.total ?? 0,
+                      name: b.bucketLabel,
+                      itemStyle: { color: palette[b.index % palette.length] },
+                    })),
+                },
+              ],
+            }}
+          />
+        </div>
       )}
     </div>
   );
@@ -2225,6 +2277,10 @@ export default function DashboardPage() {
                 ageDistribution={personnelSummary?.ageDistribution}
                 isLoading={isLoading}
               />
+              <ServiceTimeSection
+                overview={serviceTimeOverview}
+                isLoading={isLoadingServiceTime}
+              />
               <DriverLicenseCapacitySection
                 driverLicenses={personnelSummary?.driverLicenses}
                 isLoading={isLoading}
@@ -2242,10 +2298,6 @@ export default function DashboardPage() {
               <HealthOverviewSection
                 overview={healthOverview}
                 isLoading={isLoadingHealthOverview}
-              />
-              <ServiceTimeSection
-                overview={serviceTimeOverview}
-                isLoading={isLoadingServiceTime}
               />
             </div>
           </div>
