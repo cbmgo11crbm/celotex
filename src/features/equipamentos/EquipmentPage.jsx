@@ -43,7 +43,7 @@ export default function EquipmentPage() {
     data: equipment,
     isLoading: isLoadingEquipment,
     error: equipmentError,
-  } = useEquipment({ unitId: currentUnitId, search: debouncedSearch });
+  } = useEquipment({ unitId: currentUnitId });
 
   const createEquipment = useCreateEquipment();
   const updateEquipment = useUpdateEquipment();
@@ -83,10 +83,10 @@ export default function EquipmentPage() {
 
     return equipment.filter((row) => {
       const term = debouncedSearch.trim().toLowerCase();
-      const categoryName = categories.find((c) => c.id === row.category_id)?.name ?? '';
+      const categoryNames = (row.categories ?? []).map((c) => c.name).join(' ');
 
       if (term) {
-        const haystacks = [row.item, row.model_brand, categoryName];
+        const haystacks = [row.item, row.model_brand, categoryNames];
         const matches = haystacks.some((value) => value && value.toLowerCase().includes(term));
         if (!matches) return false;
       }
@@ -95,13 +95,13 @@ export default function EquipmentPage() {
         return false;
       }
 
-      if (categoryFilter !== 'all' && row.category_id !== categoryFilter) {
+      if (categoryFilter !== 'all' && !(row.categories ?? []).some((c) => c.id === categoryFilter)) {
         return false;
       }
 
       return true;
     });
-  }, [equipment, debouncedSearch, categories, conservationFilter, categoryFilter]);
+  }, [equipment, debouncedSearch, conservationFilter, categoryFilter]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -351,20 +351,17 @@ export default function EquipmentPage() {
                         {row.model_brand || '-'}
                       </td>
                       <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {(() => {
-                          const cat = categories.find((c) => c.id === row.category_id);
-                          if (!cat) return '-';
-                          return (
+                        <div className="flex flex-wrap gap-1">
+                          {(row.categories ?? []).length === 0 && '-'}
+                          {(row.categories ?? []).map((cat) => (
                             <span
-                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                cat.color_hex ? 'border' : 'bg-muted text-foreground'
-                              }`}
-                              style={cat.color_hex ? { backgroundColor: cat.color_hex, color: '#ffffff' } : undefined}
+                              key={cat.id}
+                              className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground"
                             >
                               {cat.name}
                             </span>
-                          );
-                        })()}
+                          ))}
+                        </div>
                       </td>
                       <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
                         {row.quantity}
@@ -444,22 +441,16 @@ export default function EquipmentPage() {
                         <div className="mt-1 text-[11px] text-muted-foreground">
                           Unidade: {units?.find((u) => u.id === row.unit_id)?.acronym ?? '-'}
                         </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          Categoria:{' '}
-                          {(() => {
-                            const cat = categories.find((c) => c.id === row.category_id);
-                            if (!cat) return '-';
-                            return (
-                              <span
-                                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                  cat.color_hex ? 'border' : 'bg-muted text-foreground'
-                                }`}
-                                style={cat.color_hex ? { backgroundColor: cat.color_hex, color: '#ffffff' } : undefined}
-                              >
-                                {cat.name}
-                              </span>
-                            );
-                          })()}
+                        <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-muted-foreground">
+                          {(row.categories ?? []).length === 0 && '-'}
+                          {(row.categories ?? []).map((cat) => (
+                            <span
+                              key={cat.id}
+                              className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground"
+                            >
+                              {cat.name}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
