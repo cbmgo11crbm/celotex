@@ -18,7 +18,7 @@ export function useEquipment({ unitId }) {
         equipmentQuery,
         supabase
           .from('equipment_category_relations')
-          .select('equipment_id, equipment_categories(id, name)'),
+          .select('equipment_id, equipment_categories(id, name, color_hex)'),
       ]);
 
       if (equipmentRes.error) {
@@ -39,7 +39,7 @@ export function useEquipment({ unitId }) {
         if (!categoriesByEquipment.has(eqId)) {
           categoriesByEquipment.set(eqId, []);
         }
-        categoriesByEquipment.get(eqId).push({ id: cat.id, name: cat.name });
+        categoriesByEquipment.get(eqId).push({ id: cat.id, name: cat.name, color_hex: cat.color_hex });
       }
 
       return equipment.map((row) => ({

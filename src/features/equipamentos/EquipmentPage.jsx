@@ -356,7 +356,10 @@ export default function EquipmentPage() {
                           {(row.categories ?? []).map((cat) => (
                             <span
                               key={cat.id}
-                              className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground"
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                cat.color_hex ? 'border' : 'bg-muted text-foreground'
+                              }`}
+                              style={cat.color_hex ? { backgroundColor: cat.color_hex, color: '#ffffff' } : undefined}
                             >
                               {cat.name}
                             </span>
@@ -446,7 +449,10 @@ export default function EquipmentPage() {
                           {(row.categories ?? []).map((cat) => (
                             <span
                               key={cat.id}
-                              className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground"
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                cat.color_hex ? 'border' : 'bg-muted text-foreground'
+                              }`}
+                              style={cat.color_hex ? { backgroundColor: cat.color_hex, color: '#ffffff' } : undefined}
                             >
                               {cat.name}
                             </span>

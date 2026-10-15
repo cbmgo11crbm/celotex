@@ -109,6 +109,7 @@ export default function MilitaryListPage() {
   const [situationFilter, setSituationFilter] = useState('all'); // all | ativos | afastados
   const [activityFilter, setActivityFilter] = useState('all'); // all | operacional | administrativo
   const [tafFilter, setTafFilter] = useState('all'); // all | E | MB | B | R | I | NF
+  const [cnhFilter, setCnhFilter] = useState('all'); // all | A | B | C | D | E
   const [ageMin, setAgeMin] = useState('');
   const [ageMax, setAgeMax] = useState('');
   const [serviceMin, setServiceMin] = useState('');
@@ -346,6 +347,14 @@ export default function MilitaryListPage() {
         }
       }
 
+      // Filtro por CNH
+      if (cnhFilter !== 'all') {
+        const cnh = item.driver_license_category ?? '';
+        if (!cnh.includes(cnhFilter)) {
+          return false;
+        }
+      }
+
       // Filtro por idade
       const age = calculateAge(item.birth_date);
       if (age !== null) {
@@ -371,7 +380,7 @@ export default function MilitaryListPage() {
 
       return true;
     });
-  }, [results, debouncedSearch, situationFilter, activityFilter, tafFilter, ageMin, ageMax, serviceMin, serviceMax, rankFilter, sectionsByMilitary]);
+  }, [results, debouncedSearch, situationFilter, activityFilter, tafFilter, cnhFilter, ageMin, ageMax, serviceMin, serviceMax, rankFilter, sectionsByMilitary]);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
@@ -452,6 +461,24 @@ export default function MilitaryListPage() {
               <option value="R">R</option>
               <option value="I">I</option>
               <option value="NF">NF</option>
+            </select>
+          </div>
+          <div className="space-y-1 md:col-span-1">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">CNH</span>
+            <select
+              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={cnhFilter}
+              onChange={(e) => {
+                setCnhFilter(e.target.value);
+                setSelectedId(null);
+              }}
+            >
+              <option value="all">Todas</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
             </select>
           </div>
           <div className="space-y-1 md:col-span-1">
