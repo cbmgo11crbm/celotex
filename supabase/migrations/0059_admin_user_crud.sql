@@ -89,7 +89,7 @@ begin
     'authenticated',
     'authenticated',
     v_email::text,
-    public.crypt(p_password, public.gen_salt('bf')),
+    extensions.crypt(p_password, extensions.gen_salt('bf')),
     now(),
     now(),
     '',
