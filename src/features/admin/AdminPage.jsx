@@ -10,6 +10,7 @@ import VehicleConservationStatesAdmin from './VehicleConservationStatesAdmin.jsx
 import VehicleStatusesAdmin from './VehicleStatusesAdmin.jsx';
 import MilitaryBoardsAdmin from './MilitaryBoardsAdmin.jsx';
 import CoursesAdmin from './CoursesAdmin.jsx';
+import UsersAdmin from './UsersAdmin.jsx';
 
 function PlaceholderCard({ title, description, canEdit }) {
   return (
@@ -54,6 +55,7 @@ export default function AdminPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <UsersAdmin canEdit={isMaster} />
         <UnitsAdmin canEdit={isMaster} />
         <RanksAdmin canEdit={isMaster} />
         <MilitaryBoardsAdmin canEdit={isMaster} />
