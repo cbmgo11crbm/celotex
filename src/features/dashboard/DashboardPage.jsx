@@ -981,6 +981,14 @@ function ClassificationSection({ classification, isLoading }) {
   );
 }
 
+function formatDateOnlyPtBr(value) {
+  if (!value) return '';
+  const [datePart] = String(value).split('T');
+  const [year, month, day] = datePart.split('-');
+  if (!year || !month || !day) return String(value);
+  return `${day}/${month}/${year}`;
+}
+
 function BirthdaysSection({ birthdays, isLoading }) {
   const today = birthdays?.today ?? [];
   const next7 = birthdays?.next7Days ?? [];
@@ -1032,7 +1040,7 @@ function BirthdaysSection({ birthdays, isLoading }) {
                       {b.rankCode} {b.warName}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      {b.unitAcronym} • {new Date(b.birthDate).toLocaleDateString('pt-BR')} ({b.daysUntil}d)
+                      {b.unitAcronym} • {formatDateOnlyPtBr(b.birthDate)} ({b.daysUntil}d)
                     </div>
                   </div>
                 ))}
@@ -1053,7 +1061,7 @@ function BirthdaysSection({ birthdays, isLoading }) {
                       {b.rankCode} {b.warName}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      {b.unitAcronym} • {new Date(b.birthDate).toLocaleDateString('pt-BR')} ({b.daysUntil}d)
+                      {b.unitAcronym} • {formatDateOnlyPtBr(b.birthDate)} ({b.daysUntil}d)
                     </div>
                   </div>
                 ))}
