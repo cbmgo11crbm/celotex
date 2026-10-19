@@ -53,6 +53,12 @@ export default function UsersAdmin({ canEdit }) {
   const [role, setRole] = useState('viewer');
   const [unitId, setUnitId] = useState('');
 
+  const [editingUser, setEditingUser] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('viewer');
+  const [editUnitId, setEditUnitId] = useState('');
+  const [editActive, setEditActive] = useState(true);
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['profiles', 'admin'] });
 
   const createMutation = useMutation({
@@ -122,49 +128,47 @@ export default function UsersAdmin({ canEdit }) {
     });
   }
 
-  async function handleEdit(user) {
+  function openEditModal(user) {
     if (!canEdit || isBusy) return;
+    setEditingUser(user);
+    setEditName(user.full_name ?? '');
+    setEditRole(user.role ?? 'viewer');
+    setEditUnitId(user.unit_id ?? '');
+    setEditActive(user.is_active ?? true);
+  }
 
-    const newName = window.prompt('Nome completo:', user.full_name ?? '');
-    if (newName === null) return;
-    const trimmedName = newName.trim();
+  function closeEditModal() {
+    if (isBusy) return;
+    setEditingUser(null);
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    const trimmedName = editName.trim();
     if (!trimmedName) {
       toast.error('O nome não pode ficar em branco.');
       return;
     }
 
-    const newRole = window.prompt('Perfil (master, editor, viewer):', user.role ?? 'viewer');
-    if (newRole === null) return;
-    const trimmedRole = newRole.trim().toLowerCase();
-    if (!ROLE_LABELS[trimmedRole]) {
-      toast.error('Perfil inválido. Use master, editor ou viewer.');
+    if (editRole !== 'master' && !editUnitId) {
+      toast.error('Selecione a unidade do usuário.');
       return;
     }
 
-    let newUnitId = user.unit_id;
-    if (trimmedRole !== 'master') {
-      const options = units.map((u) => `${u.acronym}: ${u.id}`).join('\n');
-      const answer = window.prompt(
-        `ID da unidade (deixe igual para manter):\n${options}`,
-        user.unit_id ?? '',
-      );
-      if (answer === null) return;
-      newUnitId = answer.trim() || null;
-    } else {
-      newUnitId = null;
+    try {
+      await updateMutation.mutateAsync({
+        p_user_id: editingUser.id,
+        p_full_name: trimmedName,
+        p_role: editRole,
+        p_unit_id: editRole === 'master' ? null : editUnitId || null,
+        p_is_active: editActive,
+      });
+      setEditingUser(null);
+    } catch (err) {
+      // erros já tratados em onError
     }
-
-    const active = window.confirm(
-      `Usuário ativo? OK = ativo, Cancelar = inativo.\nAtual: ${user.is_active ? 'ativo' : 'inativo'}`,
-    );
-
-    await updateMutation.mutateAsync({
-      p_user_id: user.id,
-      p_full_name: trimmedName,
-      p_role: trimmedRole,
-      p_unit_id: newUnitId,
-      p_is_active: active,
-    });
   }
 
   return (
@@ -289,7 +293,7 @@ export default function UsersAdmin({ canEdit }) {
                           size="xs"
                           variant="outline"
                           disabled={isBusy}
-                          onClick={() => handleEdit(user)}
+                          onClick={() => openEditModal(user)}
                         >
                           Editar
                         </Button>
@@ -335,6 +339,88 @@ export default function UsersAdmin({ canEdit }) {
           </table>
         )}
       </div>
+
+      {editingUser && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-3">
+          <div className="w-full max-w-md rounded-lg border bg-background p-4 text-sm shadow-lg">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Editar usuário
+                </div>
+                <div className="text-sm font-semibold">{editingUser.email}</div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={closeEditModal} disabled={isBusy}>
+                Fechar
+              </Button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-3 text-xs">
+              <Input
+                label="Nome completo"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Nome do usuário"
+              />
+
+              <label className="block space-y-1">
+                <span className="text-[11px] font-medium text-muted-foreground">Perfil</span>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-background px-2 text-xs"
+                >
+                  <option value="viewer">Viewer</option>
+                  <option value="editor">Editor</option>
+                  <option value="master">Master</option>
+                </select>
+              </label>
+
+              <label className="block space-y-1">
+                <span className="text-[11px] font-medium text-muted-foreground">Unidade</span>
+                <select
+                  value={editUnitId}
+                  onChange={(e) => setEditUnitId(e.target.value)}
+                  disabled={editRole === 'master'}
+                  className="h-9 w-full rounded-md border bg-background px-2 text-xs disabled:opacity-50"
+                >
+                  <option value="">Selecione...</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.acronym}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  checked={editActive}
+                  onChange={(e) => setEditActive(e.target.checked)}
+                  className="h-4 w-4 rounded border"
+                />
+                <span className="text-xs">Usuário ativo</span>
+              </label>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={closeEditModal}
+                  disabled={isBusy}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" size="sm" disabled={isBusy}>
+                  Salvar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
